@@ -17,12 +17,12 @@ SHLINK = liblammps.so
 OBJDIR =   Obj_$@
 OBJSHDIR = Obj_shared_$@
 
-SRC =	$(filter-out library.cpp,$(wildcard *.cpp))
-INC =	$(filter-out library.h,$(wildcard *.h))
+SRC =	$(wildcard *.cpp)
+INC =	$(wildcard *.h)
 OBJ = 	$(SRC:.cpp=.o)
 
-SRCLIB = $(filter-out main.cpp,$(SRC)) library.cpp
-OBJLIB = $(filter-out main.o,$(OBJ)) library.o
+SRCLIB = $(filter-out main.cpp,$(SRC))
+OBJLIB = $(filter-out main.o,$(OBJ))
 
 # Command-line options for mode: exe (default), shexe, lib, shlib
 
@@ -100,6 +100,7 @@ help:
 	@echo ''
 	@echo 'make package                 list available packages and their dependencies'
 	@echo 'make package-status (ps)     status of all packages'
+	@echo 'make package-installed (pi)  list of installed packages'
 	@echo 'make yes-package             install a single pgk in src dir'
 	@echo 'make no-package              remove a single pkg from src dir'
 	@echo 'make yes-all                 install all pgks in src dir'
@@ -176,7 +177,7 @@ help:
 	  then cp Makefile.package.settings.empty Makefile.package.settings; fi
 	@cp Makefile.package Makefile.package.settings $(objdir)
 	@cd $(objdir); rm -f .depend; \
-	$(MAKE) $(MFLAGS) "SRC = $(SRC) library.cpp" "INC = $(INC) library.h" depend || :
+	$(MAKE) $(MFLAGS) "SRC = $(SRC)" "INC = $(INC)" depend || :
 ifeq ($(mode),exe)
 	@cd $(objdir); \
 	$(MAKE) $(MFLAGS) "OBJ = $(OBJ)" "INC = $(INC)" "SHFLAGS =" \
@@ -260,6 +261,7 @@ package:
 	@echo 'make package                 list available packages'
 	@echo 'make package                 list available packages'
 	@echo 'make package-status (ps)     status of all packages'
+	@echo 'make package-installed (pi)  list of installed packages'
 	@echo 'make yes-package             install a single pgk in src dir'
 	@echo 'make no-package              remove a single pkg from src dir'
 	@echo 'make yes-all                 install all pgks in src dir'
@@ -354,6 +356,7 @@ lib-%:
 	fi; touch main.cpp
 
 # status = list src files that differ from package files
+# installed = list of installed packages
 # update = replace src files with newer package files
 # overwrite = overwrite package files with newer src files
 # diff = show differences between src and package files
@@ -363,6 +366,10 @@ package-status ps:
 	@for p in $(PACKAGEUC); do $(SHELL) Package.sh $$p status; done
 	@echo ''
 	@for p in $(PACKUSERUC); do $(SHELL) Package.sh $$p status; done
+
+package-installed pi:
+	@for p in $(PACKAGEUC); do $(SHELL) Package.sh $$p installed; done
+	@for p in $(PACKUSERUC); do $(SHELL) Package.sh $$p installed; done
 
 package-update pu: purge
 	@for p in $(PACKAGEUC); do $(SHELL) Package.sh $$p update; done
