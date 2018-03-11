@@ -182,11 +182,9 @@ The tool is authored by Xiaowang Zhou (Sandia), xzhou at sandia.gov.
 
 doxygen tool :h4,link(doxygen)
 
-:link(doxygenwebsite,http://doxygen.org)
-
 The tools/doxygen directory contains a shell script called
 doxygen.sh which can generate a call graph and API lists using
-the "Doxygen"_doxygenwebsite software.
+the "Doxygen software"_http://doxygen.org.
 
 See the included README file for details.
 
