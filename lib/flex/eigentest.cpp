@@ -14,4 +14,5 @@ int eigentest( Matrix3d& s , Vector3d& v )
   m(1,0) = 2.5;
   m(0,1) = -1;
   m(1,1) = m(1,0) + m(0,1);
+  return(0);
 }
