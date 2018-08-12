@@ -17,9 +17,8 @@ OBJ =   $(SRC:.cpp=.o)
 
 # ------ SETTINGS ------
 
-FC = g++
-FFLAGS =  -O3 -fPIC -ffast-math -fstrict-aliasing
-FFLAGS0 = -O0 -fPIC -fno-second-underscore
+CC = g++
+CFLAGS =  -O3 -fPIC -ffast-math -fstrict-aliasing -I/usr/include/eigen3
 ARCHIVE = ar
 AR = ar
 ARCHFLAG = -rcs
@@ -34,7 +33,7 @@ lib: 	$(OBJ)
 # ------ COMPILE RULES ------
 
 %.o:%.cpp
-	$(FC) $(FFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 # ------ CLEAN ------
 
@@ -42,5 +41,5 @@ clean:
 	-rm -f *.o $(LIB)
 
 tar:
-	-tar -czvf ../linalg.tar.gz $(FILES)
+	-tar -czvf ../flex.tar.gz $(FILES)
 
