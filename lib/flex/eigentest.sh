@@ -1,12 +1,15 @@
 #!/bin/bash
 
+
 # Eigen implemented vector operation:
 
 g++ -I/usr/include/eigen3 -c function.cpp
 
-# Fortran program calls C++ function with Eigen implemented vector operation:
 
-gfortran -c program.f
+# Create static library:
+
+ar ruv libfunction.a function.o
+ranlib libfunction.a
 
 
 # Fortran function interface to C++ implemented Eigen vector operation function:
@@ -14,10 +17,9 @@ gfortran -c program.f
 gfortran -c ffunction.f
 
 
-# Create static library:
+# Fortran program calls C++ function with Eigen implemented vector operation:
 
-ar ruv libfunction.a function.o
-ranlib libfunction.a
+gfortran -c program.f
 
 
 # Link with C++ linker:
