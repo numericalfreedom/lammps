@@ -1,7 +1,7 @@
 <!-- HTML_ONLY -->
 <HEAD>
 <TITLE>LAMMPS Users Manual</TITLE>
-<META NAME="docnumber" CONTENT="2 Aug 2018 version">
+<META NAME="docnumber" CONTENT="22 Aug 2018 version">
 <META NAME="author" CONTENT="http://lammps.sandia.gov - Sandia National Laboratories">
 <META NAME="copyright" CONTENT="Copyright (2003) Sandia Corporation. This software and manual is distributed under the GNU General Public License.">
 </HEAD>
@@ -21,7 +21,7 @@
 :line
 
 LAMMPS Documentation :c,h1
-2 Aug 2018 version :c,h2
+22 Aug 2018 version :c,h2
 
 "What is a LAMMPS version?"_Manual_version.html
 
@@ -66,7 +66,7 @@ every LAMMPS command.
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
+   :numbered: 3
    :caption: User Documentation
    :name: userdoc
    :includehidden:
@@ -74,7 +74,7 @@ every LAMMPS command.
    Intro
    Install
    Build
-   Run
+   Run_head
    Commands
    Packages
    Speed
@@ -112,7 +112,7 @@ END_RST -->
 "Introduction"_Intro.html :olb,l
 "Install LAMMPS"_Install.html :l
 "Build LAMMPS"_Build.html :l
-"Run LAMMPS"_Run.html :l
+"Run LAMMPS"_Run_head.html :l
 "Commands"_Commands.html :l
 "Optional packages"_Packages.html :l
 "Accelerate performance"_Speed.html :l

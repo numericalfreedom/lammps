@@ -1,5 +1,5 @@
 "Previous Section"_Install.html - "LAMMPS WWW Site"_lws - "LAMMPS
-Documentation"_ld - "LAMMPS Commands"_lc - "Next Section"_Run.html :c
+Documentation"_ld - "LAMMPS Commands"_lc - "Next Section"_Run_head.html :c
 
 :link(lws,http://lammps.sandia.gov)
 :link(ld,Manual.html)
@@ -28,6 +28,7 @@ as described on the "Install"_Install.html doc page.
    Build_settings
    Build_package
    Build_extras
+   Build_windows
 
 END_RST -->
 
@@ -36,10 +37,11 @@ END_RST -->
 "Build LAMMPS with CMake"_Build_cmake.html
 "Build LAMMPS with make"_Build_make.html
 "Link LAMMPS as a library to another code"_Build_link.html
-"Basic build options: serial/parallel, compilers, executable/library"_Build_basics.html
-"Optional build settings"_Build_settings.html :all(b)
+"Basic build options"_Build_basics.html
+"Optional build settings"_Build_settings.html
 "Include packages in build"_Build_package.html
-"Packages with extra build options"_Build_extras.html :all(b)
+"Packages with extra build options"_Build_extras.html
+"Notes for building LAMMPS on Windows"_Build_windows.html  :all(b)
 
 If you have problems building LAMMPS, it is often due to software
 issues on your local machine.  If you can, find a local expert to
