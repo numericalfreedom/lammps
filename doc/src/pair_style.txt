@@ -93,7 +93,7 @@ There are also additional accelerated pair styles (not listed here)
 included in the LAMMPS distribution for faster performance on CPUs,
 GPUs, and KNLs.  The individual style names on the "Commands
 pair"_Commands_pair.html doc page are followed by one or more of
-(g,i,k,o,t) to indicate which accerlerated styles exist.
+(g,i,k,o,t) to indicate which accelerated styles exist.
 
 "pair_style none"_pair_none.html - turn off pairwise interactions
 "pair_style hybrid"_pair_hybrid.html - multiple styles of pairwise interactions
@@ -218,10 +218,9 @@ This command must be used before any coefficients are set by the
 "read_restart"_read_restart.html commands.
 
 Some pair styles are part of specific packages.  They are only enabled
-if LAMMPS was built with that package.  See the "Making
-LAMMPS"_Section_start.html#start_3 section for more info on packages.
-The doc pages for individual pair potentials tell if it is part of a
-package.
+if LAMMPS was built with that package.  See the "Build
+package"_Build_package.html doc page for more info.  The doc pages for
+individual pair potentials tell if it is part of a package.
 
 [Related commands:]
 
