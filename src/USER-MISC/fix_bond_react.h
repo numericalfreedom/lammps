@@ -58,6 +58,7 @@ class FixBondReact : public Fix {
   tagint lastcheck;
   int stabilization_flag;
   int *stabilize_steps_flag;
+  int *update_edges_flag;
   int status;
   int *groupbits;
 
@@ -122,6 +123,7 @@ class FixBondReact : public Fix {
   tagint **local_mega_glove; // consolidation local of reaction instances
   tagint **ghostly_mega_glove; // consolidation nonlocal of reaction instances
   tagint **global_mega_glove; // consolidation (inter-processor) of gloves containing nonlocal atoms
+  int *localsendlist; // indicates ghosts of other procs
   int local_num_mega; // num of local reaction instances
   int ghostly_num_mega; // num of ghostly reaction instances
   int global_megasize; // num of reaction instances in global_mega_glove

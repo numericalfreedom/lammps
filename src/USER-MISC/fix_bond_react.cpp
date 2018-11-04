@@ -163,6 +163,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   memory->create(seed,nreacts,"bond/react:seed");
   memory->create(limit_duration,nreacts,"bond/react:limit_duration");
   memory->create(stabilize_steps_flag,nreacts,"bond/react:stabilize_steps_flag");
+  memory->create(update_edges_flag,nreacts,"bond/react:update_edges_flag");
   memory->create(iatomtype,nreacts,"bond/react:iatomtype");
   memory->create(jatomtype,nreacts,"bond/react:jatomtype");
   memory->create(ibonding,nreacts,"bond/react:ibonding");
@@ -178,6 +179,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     fraction[i] = 1;
     seed[i] = 12345;
     stabilize_steps_flag[i] = 0;
+    update_edges_flag[i] = 0;
     // set default limit duration to 60 timesteps
     limit_duration[i] = 60;
     reaction_count[i] = 0;
@@ -248,6 +250,11 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
                                       "'stabilize_steps' has too few arguments");
         limit_duration[rxn] = force->numeric(FLERR,arg[iarg+1]);
         stabilize_steps_flag[rxn] = 1;
+        iarg += 2;
+      } else if (strcmp(arg[iarg],"update_edges") == 0) {
+        if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
+                                      "'update_edges' has too few arguments");
+        if (strcmp(arg[iarg+1],"charges") == 0) update_edges_flag[rxn] = 1;
         iarg += 2;
       } else error->all(FLERR,"Illegal fix bond/react command: unknown keyword");
     }
@@ -379,6 +386,7 @@ FixBondReact::~FixBondReact()
   memory->destroy(seed);
   memory->destroy(limit_duration);
   memory->destroy(stabilize_steps_flag);
+  memory->destroy(update_edges_flag);
 
   memory->destroy(iatomtype);
   memory->destroy(jatomtype);
@@ -588,7 +596,7 @@ void FixBondReact::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixBondReact::init_list(int id, NeighList *ptr)
+void FixBondReact::init_list(int /*id*/, NeighList *ptr)
 {
   list = ptr;
 }
@@ -961,6 +969,10 @@ void FixBondReact::superimpose_algorithm()
   local_num_mega = 0;
   ghostly_num_mega = 0;
 
+  // indicates local ghosts of other procs
+  int tmp;
+  localsendlist = (int *) comm->extract("localsendlist",tmp);
+
   // quick description of important global indices you'll see floating about:
   // 'pion' is the pioneer loop index
   // 'neigh' in the first neighbor index
@@ -1063,8 +1075,8 @@ void FixBondReact::superimpose_algorithm()
         hang_catch++;
         // let's go ahead and catch the simplest of hangs
         //if (hang_catch > onemol->natoms*4)
-        if (hang_catch > atom->nlocal*3) {
-          error->all(FLERR,"Excessive iteration of superimpose algorithm");
+        if (hang_catch > atom->nlocal*30) {
+          error->one(FLERR,"Excessive iteration of superimpose algorithm");
         }
       }
     }
@@ -1554,6 +1566,39 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
       error->one(FLERR,"Atom affected by reaction too close to template edge");
   }
 
+  // additionally, if a bond changes type, but neither involved atom is landlocked, bad
+  // would someone want to change an angle type but not bond or atom types? (etc.) ...hopefully not yet
+  for (int i = 0; i < twomol->natoms; i++) {
+    if (landlocked_atoms[i][myrxn] == 0) {
+      for (int j = 0; j < twomol->num_bond[i]; j++) {
+        int twomol_atomj = twomol->bond_atom[i][j];
+        if (landlocked_atoms[twomol_atomj-1][myrxn] == 0) {
+          int onemol_atomi = equivalences[i][1][myrxn];
+          int onemol_batom;
+          for (int m = 0; m < onemol->num_bond[onemol_atomi-1]; m++) {
+            onemol_batom = onemol->bond_atom[onemol_atomi-1][m];
+            if (onemol_batom == equivalences[twomol_atomj-1][1][myrxn]) {
+              if (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomi-1][m]) {
+                error->one(FLERR,"Bond type affected by reaction too close to template edge");
+              }
+            }
+          }
+          if (newton_bond) {
+            int onemol_atomj = equivalences[twomol_atomj-1][1][myrxn];
+            for (int m = 0; m < onemol->num_bond[onemol_atomj-1]; m++) {
+              onemol_batom = onemol->bond_atom[onemol_atomj-1][m];
+              if (onemol_batom == equivalences[i][1][myrxn]) {
+                if (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomj-1][m]) {
+                  error->one(FLERR,"Bond type affected by reaction too close to template edge");
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // also, if atoms change number of bonds, but aren't landlocked, that could be bad
   if (me == 0)
     for (int i = 0; i < twomol->natoms; i++) {
@@ -1824,16 +1869,23 @@ if so, flag for broadcasting for perusal by all processors
 
 void FixBondReact::glove_ghostcheck()
 {
-  // it appears this little loop was deemed important enough for its own function!
-  // noteworthy: it's only relevant for parallel
-
   // here we add glove to either local_mega_glove or ghostly_mega_glove
+  // ghostly_mega_glove includes atoms that are ghosts, either of this proc or another
+  // 'ghosts of another' indication taken from comm->sendlist
+
   int ghostly = 0;
-  for (int i = 0; i < onemol->natoms; i++) {
-    if (atom->map(glove[i][1]) >= atom->nlocal) {
-      ghostly = 1;
-      break;
+  if (comm->style == 0) {
+    for (int i = 0; i < onemol->natoms; i++) {
+      int ilocal = atom->map(glove[i][1]);
+      if (ilocal >= atom->nlocal || localsendlist[ilocal] == 1) {
+        ghostly = 1;
+        break;
+      }
     }
+  } else {
+    #if !defined(MPI_STUBS)
+      ghostly = 1;
+    #endif
   }
 
   if (ghostly == 1) {
@@ -1978,13 +2030,13 @@ void FixBondReact::update_everything()
     }
 
     // update charges and types of landlocked atoms
-    // here, add check for charge instead of requiring it
     for (int i = 0; i < update_num_mega; i++) {
       rxnID = update_mega_glove[0][i];
       twomol = atom->molecules[reacted_mol[rxnID]];
       for (int j = 0; j < twomol->natoms; j++) {
         int jj = equivalences[j][1][rxnID]-1;
-        if (landlocked_atoms[j][rxnID] == 1 && atom->map(update_mega_glove[jj+1][i]) >= 0 &&
+        if ((landlocked_atoms[j][rxnID] == 1 || update_edges_flag[rxnID] == 1) &&
+            atom->map(update_mega_glove[jj+1][i]) >= 0 &&
             atom->map(update_mega_glove[jj+1][i]) < nlocal) {
           type[atom->map(update_mega_glove[jj+1][i])] = twomol->type[j];
           if (twomol->qflag && atom->q_flag) {
@@ -2067,7 +2119,7 @@ void FixBondReact::update_everything()
                   nspecial[atom->map(update_mega_glove[jj+1][i])][1]++;
                   nspecial[atom->map(update_mega_glove[jj+1][i])][2]++;
                 }
-                for (int n = nspecial[atom->map(update_mega_glove[jj+1][i])][2]; n > insert_num; n--) {
+                for (int n = nspecial[atom->map(update_mega_glove[jj+1][i])][2]-1; n > insert_num; n--) {
                   special[atom->map(update_mega_glove[jj+1][i])][n] = special[atom->map(update_mega_glove[jj+1][i])][n-1];
                 }
                 special[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->special[j][k]-1][1][rxnID]][i];
@@ -2496,7 +2548,7 @@ void FixBondReact::open(char *file)
   fp = fopen(file,"r");
   if (fp == NULL) {
     char str[128];
-    sprintf(str,"Cannot open superimpose file %s",file);
+    snprintf(str,128,"Cannot open superimpose file %s",file);
     error->one(FLERR,str);
   }
 }
@@ -2587,7 +2639,7 @@ double FixBondReact::compute_vector(int n)
 
 /* ---------------------------------------------------------------------- */
 
-void FixBondReact::post_integrate_respa(int ilevel, int iloop)
+void FixBondReact::post_integrate_respa(int ilevel, int /*iloop*/)
 {
   if (ilevel == nlevels_respa-1) post_integrate();
 }
@@ -2595,7 +2647,7 @@ void FixBondReact::post_integrate_respa(int ilevel, int iloop)
 /* ---------------------------------------------------------------------- */
 
 int FixBondReact::pack_forward_comm(int n, int *list, double *buf,
-                                    int pbc_flag, int *pbc)
+                                    int /*pbc_flag*/, int * /*pbc*/)
 {
   int i,j,k,m,ns;
 
