@@ -57,7 +57,9 @@ class FixBondReact : public Fix {
   double **cutsq,*fraction;
   tagint lastcheck;
   int stabilization_flag;
+  int custom_exclude_flag;
   int *stabilize_steps_flag;
+  int *update_edges_flag;
   int status;
   int *groupbits;
 
@@ -76,9 +78,9 @@ class FixBondReact : public Fix {
   class Molecule *onemol; // pre-reacted molecule template
   class Molecule *twomol; // post-reacted molecule template
   Fix *fix1;              // nve/limit used to relax reaction sites
-  Fix *fix2;              // properties/atom used to indicate 1) indicate relaxing atoms
-                          //                                  2) system-wide thermostat
-                          //                                  3) to which 'react' atom belongs
+  Fix *fix2;              // properties/atom used to indicate 1) relaxing atoms
+                          //                                  2) to which 'react' atom belongs
+  Fix *fix3;              // property/atom used for system-wide thermostat
   class RanMars **random;
   class NeighList *list;
 
@@ -87,6 +89,8 @@ class FixBondReact : public Fix {
   char *nve_limit_xmax; // indicates max distance allowed to move when relaxing
   char *id_fix1; // id of internally created fix nve/limit
   char *id_fix2; // id of internally created fix per-atom properties
+  char *id_fix3; // id of internally created 'stabilization group' per-atom property fix
+  char *statted_id; // name of 'stabilization group' per-atom property
   char *master_group; // group containing relaxing atoms from all fix rxns
   char *exclude_group; // group for system-wide thermostat
 
@@ -122,6 +126,7 @@ class FixBondReact : public Fix {
   tagint **local_mega_glove; // consolidation local of reaction instances
   tagint **ghostly_mega_glove; // consolidation nonlocal of reaction instances
   tagint **global_mega_glove; // consolidation (inter-processor) of gloves containing nonlocal atoms
+  int *localsendlist; // indicates ghosts of other procs
   int local_num_mega; // num of local reaction instances
   int ghostly_num_mega; // num of ghostly reaction instances
   int global_megasize; // num of reaction instances in global_mega_glove
