@@ -74,11 +74,7 @@ PACKSYS = compress mpiio python user-lb
 
 PACKINT = gpu kokkos meam message poems reax user-atc user-awpmd user-colvars
 
-<<<<<<< HEAD
-PACKEXT = flex kim mscg voronoi \
-=======
-PACKEXT = kim latte mscg voronoi \
->>>>>>> 91c4ef6f64dac63ee1cb212bbbb01c59c215dac7
+PACKEXT = flex kim latte mscg voronoi \
 	  user-h5md user-molfile user-netcdf user-qmmm user-quip \
 	  user-smd user-vtk
 
