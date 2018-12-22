@@ -58,14 +58,14 @@ PACKAGE = asphere body class2 colloid compress coreshell dipole gpu \
 	  python qeq reax replica rigid shock snap spin srd voronoi
 
 PACKUSER = user-atc user-awpmd user-bocs user-cgdna user-cgsdk user-colvars \
-	   user-diffraction user-dpd user-drude user-eff user-fep user-h5md \
-	   user-intel user-lb user-manifold user-meamc user-meso \
+	   user-diffraction user-dpd user-drude user-eff user-fep user-flex \
+           user-h5md user-intel user-lb user-manifold user-meamc user-meso \
 	   user-mgpt user-misc user-mofff user-molfile \
 	   user-netcdf user-omp user-phonon user-plumed user-ptm user-qmmm \
 	   user-qtb user-quip user-reaxc user-scafacos user-smd user-smtbq \
 	   user-sdpd user-sph user-tally user-uef user-vtk
 
-PACKLIB = compress gpu kim kokkos latte meam message mpiio mscg poems \
+PACKLIB = compress flex gpu kim kokkos latte meam message mpiio mscg poems \
 	  python reax voronoi \
 	  user-atc user-awpmd user-colvars user-h5md user-lb user-molfile \
 	  user-netcdf user-plumed user-qmmm user-quip user-scafacos \
@@ -75,8 +75,8 @@ PACKSYS = compress mpiio python user-lb
 
 PACKINT = gpu kokkos meam message poems reax user-atc user-awpmd user-colvars
 
-PACKEXT = kim latte mscg voronoi \
-	  user-h5md user-molfile user-netcdf user-plumed user-qmmm user-quip \
+PACKEXT = flex kim latte mscg voronoi \
+	  user-h5md user-molfile user-netcdf user-qmmm user-quip \
 	  user-smd user-vtk
 
 PACKALL = $(PACKAGE) $(PACKUSER)
