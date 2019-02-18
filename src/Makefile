@@ -67,8 +67,8 @@ PACKUSER = user-atc user-awpmd user-bocs user-cgdna user-cgsdk user-colvars \
 	   user-sdpd user-sph user-tally user-uef user-vtk user-yaff \
            user-flex
 
-PACKLIB = compress gpu kim kokkos latte message mpiio mscg poems \
-	  python voronoi \
+PACKLIB = compress gpu kim kokkos latte meam message mpiio mscg poems \
+	  python reax voronoi \
 	  user-atc user-awpmd user-colvars user-h5md user-lb user-molfile \
 	  user-netcdf user-plumed user-qmmm user-quip user-scafacos \
           user-smd user-vtk \
