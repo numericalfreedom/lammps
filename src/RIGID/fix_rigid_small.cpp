@@ -566,10 +566,10 @@ void FixRigidSmall::init()
     int rflag = 0;
     for (i = 0; i < modify->nfix; i++) {
       if (modify->fix[i]->rigid_flag) rflag = 1;
-      if (rflag && (modify->fmask[i] & POST_FORCE) && 
+      if (rflag && (modify->fmask[i] & POST_FORCE) &&
           !modify->fix[i]->rigid_flag) {
         char str[128];
-        sprintf(str,"Fix %s alters forces after fix rigid",modify->fix[i]->id);
+        snprintf(str,128,"Fix %s alters forces after fix rigid",modify->fix[i]->id);
         error->warning(FLERR,str);
       }
     }
@@ -2482,7 +2482,7 @@ void FixRigidSmall::readfile(int which, double **array, int *inbody)
     fp = fopen(infile,"r");
     if (fp == NULL) {
       char str[128];
-      sprintf(str,"Cannot open fix rigid/small infile %s",infile);
+      snprintf(str,128,"Cannot open fix rigid/small infile %s",infile);
       error->one(FLERR,str);
     }
 
@@ -2597,11 +2597,11 @@ void FixRigidSmall::write_restart_file(char *file)
 
   if (me == 0) {
     char outfile[128];
-    sprintf(outfile,"%s.rigid",file);
+    snprintf(outfile,128,"%s.rigid",file);
     fp = fopen(outfile,"w");
     if (fp == NULL) {
       char str[128];
-      sprintf(str,"Cannot open fix rigid restart file %s",outfile);
+      snprintf(str,128,"Cannot open fix rigid restart file %s",outfile);
       error->one(FLERR,str);
     }
 
@@ -3430,7 +3430,7 @@ int FixRigidSmall::modify_param(int narg, char **arg)
     else error->all(FLERR,"Illegal fix_modify command");
 
     // reset fix mask
-    // must do here and not in init, 
+    // must do here and not in init,
     // since modify.cpp::init() uses fix masks before calling fix::init()
 
     for (int i = 0; i < modify->nfix; i++)

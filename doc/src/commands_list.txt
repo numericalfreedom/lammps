@@ -44,6 +44,7 @@ Commands :h1
    fix_modify
    group
    group2ndx
+   hyper
    if
    improper_coeff
    improper_style
@@ -89,6 +90,8 @@ Commands :h1
    run
    run_style
    server
+   server_mc
+   server_md
    set
    shell
    special_bonds

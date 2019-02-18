@@ -1884,11 +1884,19 @@ void Atom::setup_sort_bins()
   // user setting if explicitly set
   // default = 1/2 of neighbor cutoff
   // check if neighbor cutoff = 0.0
+  // and in that case, disable sorting
 
-  double binsize;
+  double binsize = 0.0;
   if (userbinsize > 0.0) binsize = userbinsize;
-  else binsize = 0.5 * neighbor->cutneighmax;
-  if (binsize == 0.0) error->all(FLERR,"Atom sorting has bin size = 0.0");
+  else if (neighbor->cutneighmax > 0.0) binsize = 0.5 * neighbor->cutneighmax;
+
+  if ((binsize == 0.0) && (sortfreq > 0)) {
+    sortfreq = 0;
+    if (comm->me == 0)
+          error->warning(FLERR,"No pairwise cutoff or binsize set. "
+                         "Atom sorting therefore disabled.");
+    return;
+  }
 
   double bininv = 1.0/binsize;
 
@@ -2036,9 +2044,7 @@ void Atom::delete_callback(const char *id, int flag)
 {
   if (id == NULL) return;
 
-  int ifix;
-  for (ifix = 0; ifix < modify->nfix; ifix++)
-    if (strcmp(id,modify->fix[ifix]->id) == 0) break;
+  int ifix = modify->find_fix(id);
 
   // compact the list of callbacks
 
@@ -2046,6 +2052,8 @@ void Atom::delete_callback(const char *id, int flag)
     int match;
     for (match = 0; match < nextra_grow; match++)
       if (extra_grow[match] == ifix) break;
+    if ((nextra_grow == 0) || (match == nextra_grow))
+      error->all(FLERR,"Trying to delete non-existent Atom::grow() callback");
     for (int i = match; i < nextra_grow-1; i++)
       extra_grow[i] = extra_grow[i+1];
     nextra_grow--;
@@ -2054,6 +2062,8 @@ void Atom::delete_callback(const char *id, int flag)
     int match;
     for (match = 0; match < nextra_restart; match++)
       if (extra_restart[match] == ifix) break;
+    if ((nextra_restart == 0) || (match == nextra_restart))
+      error->all(FLERR,"Trying to delete non-existent Atom::restart() callback");
     for (int i = match; i < nextra_restart-1; i++)
       extra_restart[i] = extra_restart[i+1];
     nextra_restart--;
@@ -2062,6 +2072,8 @@ void Atom::delete_callback(const char *id, int flag)
     int match;
     for (match = 0; match < nextra_border; match++)
       if (extra_border[match] == ifix) break;
+    if ((nextra_border == 0) || (match == nextra_border))
+      error->all(FLERR,"Trying to delete non-existent Atom::border() callback");
     for (int i = match; i < nextra_border-1; i++)
       extra_border[i] = extra_border[i+1];
     nextra_border--;
@@ -2278,7 +2290,7 @@ int Atom::memcheck(const char *str)
     return 0;
   }
 
-  if (strlen(memstr) + n >= memlength) {
+  if ((int)strlen(memstr) + n >= memlength) {
     memlength += DELTA_MEMSTR;
     memory->grow(memstr,memlength,"atom:memstr");
   }

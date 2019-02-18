@@ -644,7 +644,7 @@ void FixCMAP::read_grid_map(char *cmapfile)
     fp = force->open_potential(cmapfile);
     if (fp == NULL) {
       char str[128];
-      sprintf(str,"Cannot open fix cmap file %s",cmapfile);
+      snprintf(str,128,"Cannot open fix cmap file %s",cmapfile);
       error->one(FLERR,str);
     }
   }
@@ -943,7 +943,7 @@ double FixCMAP::dihedral_angle_atan2(double fx, double fy, double fz,
 {
   // calculate the dihedral angle
 
-  double angle, arg1, arg2;
+  double angle = 0.0, arg1, arg2;
 
   arg1 = absg*(fx*bx+fy*by+fz*bz);
   arg2 = ax*bx+ay*by+az*bz;
@@ -1076,7 +1076,7 @@ void FixCMAP::read_data_section(char *keyword, int n, char *buf,
 
   if (nwords != 7) {
     char str[128];
-    sprintf(str,"Incorrect %s format in data file",keyword);
+    snprintf(str,128,"Incorrect %s format in data file",keyword);
     error->all(FLERR,str);
   }
 

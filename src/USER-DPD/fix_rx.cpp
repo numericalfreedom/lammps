@@ -272,7 +272,7 @@ void FixRX::post_constructor()
     fp = force->open_potential(kineticsFile);
     if (fp == NULL) {
       char str[128];
-      sprintf(str,"Cannot open rx file %s",kineticsFile);
+      snprintf(str,128,"Cannot open rx file %s",kineticsFile);
       error->one(FLERR,str);
     }
   }
@@ -758,8 +758,10 @@ void FixRX::pre_force(int /*vflag*/)
     memory->create( diagnosticCounterPerODE[FuncSum], nlocal, "FixRX::diagnosticCounterPerODE");
   }
 
-  //#pragma omp parallel \
-  //   reduction(+: nSteps, nIters, nFuncs, nFails )
+#if 0
+  #pragma omp parallel \
+     reduction(+: nSteps, nIters, nFuncs, nFails )
+#endif
   {
     double *rwork = new double[8*nspecies];
 
@@ -859,7 +861,7 @@ void FixRX::read_file(char *file)
     fp = force->open_potential(file);
     if (fp == NULL) {
       char str[128];
-      sprintf(str,"Cannot open rx file %s",file);
+      snprintf(str,128,"Cannot open rx file %s",file);
       error->one(FLERR,str);
     }
   }
