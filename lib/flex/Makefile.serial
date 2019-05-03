@@ -1,0 +1,45 @@
+# -*- makefile -*-
+# *_________________________________________________________________________*
+# *      Minimal BLAS/LAPACK Library for use by other LAMMPS packages
+
+SHELL = /bin/sh
+
+# ------ FILES ------
+
+SRC =	$(wildcard *.cpp)
+
+FILES = $(SRC) Makefile.* README
+
+# ------ DEFINITIONS ------
+
+LIB = libflex.a
+OBJ =   $(SRC:.cpp=.o)
+
+# ------ SETTINGS ------
+
+CC = g++
+CFLAGS =  -O3 -fPIC -ffast-math -fstrict-aliasing -I/usr/include/eigen3
+ARCHIVE = ar
+AR = ar
+ARCHFLAG = -rcs
+USRLIB =
+SYSLIB =
+
+# ------ MAKE PROCEDURE ------
+
+lib: 	$(OBJ)
+	$(ARCHIVE) $(ARFLAGS) $(LIB) $(OBJ)
+
+# ------ COMPILE RULES ------
+
+%.o:%.cpp
+	$(CC) $(CFLAGS) -c $<
+
+# ------ CLEAN ------
+
+clean:
+	-rm -f *.o $(LIB)
+
+tar:
+	-tar -czvf ../flex.tar.gz $(FILES)
+
