@@ -79,14 +79,9 @@ PACKSYS = compress mpiio python user-lb
 PACKINT = gpu kokkos message poems user-atc user-awpmd user-colvars
 
 PACKEXT = kim latte mscg voronoi \
-<<<<<<< HEAD
 	  user-adios user-h5md user-molfile user-netcdf user-plumed user-qmmm user-quip \
-	  user-smd user-vtk
-=======
-	  user-h5md user-molfile user-netcdf user-plumed user-qmmm user-quip \
 	  user-smd user-vtk \
           user-flex
->>>>>>> cac800741903704bf4d4b6ecb9ea3f196940b8ea
 
 PACKALL = $(PACKAGE) $(PACKUSER)
 
