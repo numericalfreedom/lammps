@@ -11,22 +11,22 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "lattice.h"
 #include <cmath>
 #include <cstring>
 #include <cstdlib>
-#include "lattice.h"
 #include "update.h"
 #include "domain.h"
 #include "comm.h"
 #include "force.h"
 #include "memory.h"
 #include "error.h"
+#include "utils.h"
+#include "fmt/format.h"
 
 using namespace LAMMPS_NS;
 
 #define BIG 1.0e30
-
-enum{NONE,SC,BCC,FCC,HCP,DIAMOND,SQ,SQ2,HEX,CUSTOM};
 
 /* ---------------------------------------------------------------------- */
 
@@ -301,14 +301,10 @@ Lattice::Lattice(LAMMPS *lmp, int narg, char **arg) : Pointers(lmp)
 
   // print lattice spacings
 
-  if (comm->me == 0) {
-    if (screen)
-      fprintf(screen,"Lattice spacing in x,y,z = %g %g %g\n",
-              xlattice,ylattice,zlattice);
-    if (logfile)
-      fprintf(logfile,"Lattice spacing in x,y,z = %g %g %g\n",
-              xlattice,ylattice,zlattice);
-  }
+  if (comm->me == 0)
+    utils::logmesg(lmp,fmt::format("Lattice spacing in x,y,z = "
+                                   "{:.8} {:.8} {:.8}\n",
+                                   xlattice,ylattice,zlattice));
 }
 
 /* ---------------------------------------------------------------------- */

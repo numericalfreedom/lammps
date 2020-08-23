@@ -11,14 +11,10 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <mpi.h>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include "velocity.h"
+#include <cmath>
+#include <cstring>
 #include "atom.h"
-#include "update.h"
 #include "domain.h"
 #include "lattice.h"
 #include "input.h"
@@ -71,7 +67,7 @@ void Velocity::command(int narg, char **arg)
 
   // check if velocities of atoms in rigid bodies are updated
 
-  if (modify->check_rigid_group_overlap(groupbit))
+  if (modify->check_rigid_group_overlap(groupbit) && (comm->me == 0))
     error->warning(FLERR,"Changing velocities of atoms in rigid bodies. "
                      "This has no effect unless rigid bodies are rebuild");
 
@@ -112,7 +108,7 @@ void Velocity::command(int narg, char **arg)
 
   int initcomm = 0;
   if (style == ZERO && rfix >= 0 &&
-      strcmp(modify->fix[rfix]->style,"rigid/small") == 0) initcomm = 1;
+      utils::strmatch(modify->fix[rfix]->style,"^rigid/small")) initcomm = 1;
   if ((style == CREATE || style == SET) && temperature &&
       strcmp(temperature->style,"temp/cs") == 0) initcomm = 1;
 
@@ -204,7 +200,7 @@ void Velocity::create(double t_desired, int seed)
   // initialize temperature computation(s)
   // warn if groups don't match
 
-  if (igroup != temperature->igroup && comm->me == 0)
+  if ((igroup != temperature->igroup) && (comm->me == 0))
     error->warning(FLERR,"Mismatch between velocity and compute groups");
   temperature->init();
   temperature->setup();
@@ -600,7 +596,7 @@ void Velocity::scale(int /*narg*/, char **arg)
   // initialize temperature computation
   // warn if groups don't match
 
-  if (igroup != temperature->igroup && comm->me == 0)
+  if ((igroup != temperature->igroup) && (comm->me == 0))
     error->warning(FLERR,"Mismatch between velocity and compute groups");
   temperature->init();
   temperature->setup();

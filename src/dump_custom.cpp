@@ -11,24 +11,25 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <cmath>
+#include "dump_custom.h"
 #include <cstdlib>
 #include <cstring>
-#include "dump_custom.h"
+#include <string>
 #include "atom.h"
 #include "force.h"
 #include "domain.h"
 #include "region.h"
 #include "group.h"
 #include "input.h"
-#include "variable.h"
-#include "update.h"
 #include "modify.h"
 #include "compute.h"
 #include "fix.h"
 #include "fix_store.h"
 #include "memory.h"
 #include "error.h"
+#include "update.h"
+#include "variable.h"
+#include "fmt/format.h"
 
 using namespace LAMMPS_NS;
 
@@ -182,7 +183,7 @@ DumpCustom::DumpCustom(LAMMPS *lmp, int narg, char **arg) :
   columns[0] = '\0';
   for (int iarg = 0; iarg < nfield; iarg++) {
     strcat(columns,earg[iarg]);
-    strcat(columns," ");
+    if (iarg+1 < nfield) strcat(columns," ");
   }
 }
 
@@ -249,8 +250,10 @@ DumpCustom::~DumpCustom()
     delete [] vformat;
   }
 
-  for (int i = 0; i < size_one; i++) delete [] format_column_user[i];
-  delete [] format_column_user;
+  if (format_column_user) {
+    for (int i = 0; i < size_one; i++) delete [] format_column_user[i];
+    delete [] format_column_user;
+  }
 
   delete [] columns;
 }
@@ -299,7 +302,7 @@ void DumpCustom::init_style()
       strcpy(vformat[i],ptr);
     }
 
-    vformat[i] = strcat(vformat[i]," ");
+    if (i+1 < size_one) vformat[i] = strcat(vformat[i]," ");
   }
 
   // setup boundary string
@@ -378,8 +381,83 @@ void DumpCustom::write_header(bigint ndump)
 
 /* ---------------------------------------------------------------------- */
 
+void DumpCustom::format_magic_string_binary()
+{
+  // use negative ntimestep as marker for new format
+  bigint fmtlen = strlen(MAGIC_STRING);
+  bigint marker = -fmtlen;
+  fwrite(&marker, sizeof(bigint), 1, fp);
+  fwrite(MAGIC_STRING, sizeof(char), fmtlen, fp);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::format_endian_binary()
+{
+  int endian = ENDIAN;
+  fwrite(&endian, sizeof(int), 1, fp);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::format_revision_binary()
+{
+  int revision = FORMAT_REVISION;
+  fwrite(&revision, sizeof(int), 1, fp);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::header_unit_style_binary()
+{
+  int len = 0;
+  if (unit_flag && !unit_count) {
+    ++unit_count;
+    len = strlen(update->unit_style);
+    fwrite(&len, sizeof(int), 1, fp);
+    fwrite(update->unit_style, sizeof(char), len, fp);
+  } else {
+    fwrite(&len, sizeof(int), 1, fp);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::header_columns_binary()
+{
+  int len = strlen(columns);
+  fwrite(&len, sizeof(int), 1, fp);
+  fwrite(columns, sizeof(char), len, fp);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::header_time_binary()
+{
+  char flag = time_flag ? 1 : 0;
+  fwrite(&flag, sizeof(char), 1, fp);
+
+  if (time_flag) {
+    double t = compute_time();
+    fwrite(&t, sizeof(double), 1, fp);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::header_format_binary()
+{
+  format_magic_string_binary();
+  format_endian_binary();
+  format_revision_binary();
+}
+
+/* ---------------------------------------------------------------------- */
+
 void DumpCustom::header_binary(bigint ndump)
 {
+  header_format_binary();
+
   fwrite(&update->ntimestep,sizeof(bigint),1,fp);
   fwrite(&ndump,sizeof(bigint),1,fp);
   fwrite(&domain->triclinic,sizeof(int),1,fp);
@@ -391,6 +469,11 @@ void DumpCustom::header_binary(bigint ndump)
   fwrite(&boxzlo,sizeof(double),1,fp);
   fwrite(&boxzhi,sizeof(double),1,fp);
   fwrite(&size_one,sizeof(int),1,fp);
+
+  header_unit_style_binary();
+  header_time_binary();
+  header_columns_binary();
+
   if (multiproc) fwrite(&nclusterprocs,sizeof(int),1,fp);
   else fwrite(&nprocs,sizeof(int),1,fp);
 }
@@ -399,6 +482,8 @@ void DumpCustom::header_binary(bigint ndump)
 
 void DumpCustom::header_binary_triclinic(bigint ndump)
 {
+  header_format_binary();
+
   fwrite(&update->ntimestep,sizeof(bigint),1,fp);
   fwrite(&ndump,sizeof(bigint),1,fp);
   fwrite(&domain->triclinic,sizeof(int),1,fp);
@@ -413,6 +498,11 @@ void DumpCustom::header_binary_triclinic(bigint ndump)
   fwrite(&boxxz,sizeof(double),1,fp);
   fwrite(&boxyz,sizeof(double),1,fp);
   fwrite(&size_one,sizeof(int),1,fp);
+
+  header_unit_style_binary();
+  header_time_binary();
+  header_columns_binary();
+
   if (multiproc) fwrite(&nclusterprocs,sizeof(int),1,fp);
   else fwrite(&nprocs,sizeof(int),1,fp);
 }
@@ -421,6 +511,12 @@ void DumpCustom::header_binary_triclinic(bigint ndump)
 
 void DumpCustom::header_item(bigint ndump)
 {
+  if (unit_flag && !unit_count) {
+    ++unit_count;
+    fprintf(fp,"ITEM: UNITS\n%s\n",update->unit_style);
+  }
+  if (time_flag) fprintf(fp,"ITEM: TIME\n%.16g\n",compute_time());
+
   fprintf(fp,"ITEM: TIMESTEP\n");
   fprintf(fp,BIGINT_FORMAT "\n",update->ntimestep);
   fprintf(fp,"ITEM: NUMBER OF ATOMS\n");
@@ -436,6 +532,12 @@ void DumpCustom::header_item(bigint ndump)
 
 void DumpCustom::header_item_triclinic(bigint ndump)
 {
+  if (unit_flag && !unit_count) {
+    ++unit_count;
+    fprintf(fp,"ITEM: UNITS\n%s\n",update->unit_style);
+  }
+  if (time_flag) fprintf(fp,"ITEM: TIME\n%.16g\n",compute_time());
+
   fprintf(fp,"ITEM: TIMESTEP\n");
   fprintf(fp,BIGINT_FORMAT "\n",update->ntimestep);
   fprintf(fp,"ITEM: NUMBER OF ATOMS\n");
@@ -1968,22 +2070,12 @@ int DumpCustom::modify_param(int narg, char **arg)
                          "dump:thresh_fixID");
       memory->grow(thresh_first,(nthreshlast+1),"dump:thresh_first");
 
-      int n = strlen(id) + strlen("_DUMP_STORE") + 8;
-      thresh_fixID[nthreshlast] = new char[n];
-      strcpy(thresh_fixID[nthreshlast],id);
-      sprintf(&thresh_fixID[nthreshlast][strlen(id)],"%d",nthreshlast);
-      strcat(thresh_fixID[nthreshlast],"_DUMP_STORE");
-
-      char **newarg = new char*[6];
-      newarg[0] = thresh_fixID[nthreshlast];
-      newarg[1] = group->names[igroup];
-      newarg[2] = (char *) "STORE";
-      newarg[3] = (char *) "peratom";
-      newarg[4] = (char *) "1";
-      newarg[5] = (char *) "1";
-      modify->add_fix(6,newarg);
+      std::string threshid = fmt::format("{}{}_DUMP_STORE",id,nthreshlast);
+      thresh_fixID[nthreshlast] = new char[threshid.size()+1];
+      strcpy(thresh_fixID[nthreshlast],threshid.c_str());
+      modify->add_fix(fmt::format("{} {} STORE peratom 1 1",threshid,
+                                  group->names[igroup]));
       thresh_fix[nthreshlast] = (FixStore *) modify->fix[modify->nfix-1];
-      delete [] newarg;
 
       thresh_last[nthreshlast] = nthreshlast;
       thresh_first[nthreshlast] = 1;

@@ -163,8 +163,6 @@ int NeighborKokkos::check_distance()
 template<class DeviceType>
 int NeighborKokkos::check_distance_kokkos()
 {
-  typedef DeviceType device_type;
-
   double delx,dely,delz;
   double delta,delta1,delta2;
 
@@ -216,7 +214,6 @@ int NeighborKokkos::check_distance_kokkos()
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void NeighborKokkos::operator()(TagNeighborCheckDistance<DeviceType>, const int &i, int &flag) const {
-  typedef DeviceType device_type;
   const X_FLOAT delx = x.view<DeviceType>()(i,0) - xhold.view<DeviceType>()(i,0);
   const X_FLOAT dely = x.view<DeviceType>()(i,1) - xhold.view<DeviceType>()(i,1);
   const X_FLOAT delz = x.view<DeviceType>()(i,2) - xhold.view<DeviceType>()(i,2);
@@ -242,8 +239,6 @@ void NeighborKokkos::build(int topoflag)
 template<class DeviceType>
 void NeighborKokkos::build_kokkos(int topoflag)
 {
-  typedef DeviceType device_type;
-
   int i,m;
 
   ago = 0;
@@ -301,6 +296,7 @@ void NeighborKokkos::build_kokkos(int topoflag)
 
   if (style != Neighbor::NSQ) {
     for (int i = 0; i < nbin; i++) {
+      if (!neigh_bin[i]->kokkos) atomKK->sync(Host,ALL_MASK);
       neigh_bin[i]->bin_atoms_setup(nall);
       neigh_bin[i]->bin_atoms();
     }
@@ -325,7 +321,6 @@ void NeighborKokkos::build_kokkos(int topoflag)
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void NeighborKokkos::operator()(TagNeighborXhold<DeviceType>, const int &i) const {
-  typedef DeviceType device_type;
   xhold.view<DeviceType>()(i,0) = x.view<DeviceType>()(i,0);
   xhold.view<DeviceType>()(i,1) = x.view<DeviceType>()(i,1);
   xhold.view<DeviceType>()(i,2) = x.view<DeviceType>()(i,2);
@@ -362,7 +357,7 @@ void NeighborKokkos::modify_mol_intra_grow_kokkos(){
 
 /* ---------------------------------------------------------------------- */
 void NeighborKokkos::set_binsize_kokkos() {
-  if (!binsizeflag && lmp->kokkos->ngpu > 0) {
+  if (!binsizeflag && lmp->kokkos->ngpus > 0) {
     binsize_user = cutneighmax;
     binsizeflag = 1;
   }

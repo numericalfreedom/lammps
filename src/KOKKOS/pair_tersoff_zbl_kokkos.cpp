@@ -15,11 +15,9 @@
    Contributing author: Ray Shan (SNL)
 ------------------------------------------------------------------------- */
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include "pair_tersoff_zbl_kokkos.h"
+#include <cmath>
+#include <cstring>
 #include "kokkos.h"
 #include "atom_kokkos.h"
 #include "comm.h"
@@ -28,8 +26,6 @@
 #include "neigh_request.h"
 #include "neigh_list_kokkos.h"
 #include "update.h"
-#include "integrate.h"
-#include "respa.h"
 #include "math_const.h"
 #include "memory_kokkos.h"
 #include "error.h"
@@ -105,10 +101,10 @@ void PairTersoffZBLKokkos<DeviceType>::init_style()
   int irequest = neighbor->nrequest - 1;
 
   neighbor->requests[irequest]->
-    kokkos_host = Kokkos::Impl::is_same<DeviceType,LMPHostType>::value &&
-    !Kokkos::Impl::is_same<DeviceType,LMPDeviceType>::value;
+    kokkos_host = std::is_same<DeviceType,LMPHostType>::value &&
+    !std::is_same<DeviceType,LMPDeviceType>::value;
   neighbor->requests[irequest]->
-    kokkos_device = Kokkos::Impl::is_same<DeviceType,LMPDeviceType>::value;
+    kokkos_device = std::is_same<DeviceType,LMPDeviceType>::value;
 
   if (neighflag == FULL)
     error->all(FLERR,"Cannot (yet) use full neighbor list style with tersoff/zbl/kk");
@@ -189,7 +185,7 @@ void PairTersoffZBLKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   }
   if (vflag_atom) {
     memoryKK->destroy_kokkos(k_vatom,vatom);
-    memoryKK->create_kokkos(k_vatom,vatom,maxvatom,6,"pair:vatom");
+    memoryKK->create_kokkos(k_vatom,vatom,maxvatom,"pair:vatom");
     d_vatom = k_vatom.view<DeviceType>();
   }
 
@@ -233,11 +229,11 @@ void PairTersoffZBLKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   int max_neighs = d_neighbors.extent(1);
 
-  if ((d_neighbors_short.extent(1) != max_neighs) ||
-     (d_neighbors_short.extent(0) != ignum)) {
+  if (((int)d_neighbors_short.extent(1) != max_neighs) ||
+     ((int)d_neighbors_short.extent(0) != ignum)) {
     d_neighbors_short = Kokkos::View<int**,DeviceType>("Tersoff::neighbors_short",ignum,max_neighs);
   }
-  if (d_numneigh_short.extent(0)!=ignum)
+  if ((int)d_numneigh_short.extent(0)!=ignum)
     d_numneigh_short = Kokkos::View<int*,DeviceType>("Tersoff::numneighs_short",ignum);
   Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType,TagPairTersoffZBLComputeShortNeigh>(0,neighflag==FULL?ignum:inum), *this);
 
@@ -1348,8 +1344,9 @@ void PairTersoffZBLKokkos<DeviceType>::v_tally3(EV_FLOAT &ev, const int &i, cons
 
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairTersoffZBLKokkos<DeviceType>::v_tally3_atom(EV_FLOAT &ev, const int &i, const int &j, const int &k,
-        F_FLOAT *fj, F_FLOAT *fk, F_FLOAT *drji, F_FLOAT *drjk) const
+void PairTersoffZBLKokkos<DeviceType>::v_tally3_atom(EV_FLOAT &ev, const int &i, const int & /*j*/,
+                                                     const int & /*k*/, F_FLOAT *fj, F_FLOAT *fk,
+                                                     F_FLOAT *drji, F_FLOAT *drjk) const
 {
   F_FLOAT v[6];
 
@@ -1385,7 +1382,7 @@ int PairTersoffZBLKokkos<DeviceType>::sbmask(const int& j) const {
 
 namespace LAMMPS_NS {
 template class PairTersoffZBLKokkos<LMPDeviceType>;
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef LMP_KOKKOS_GPU
 template class PairTersoffZBLKokkos<LMPHostType>;
 #endif
 }

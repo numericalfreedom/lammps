@@ -11,9 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <cstdlib>
-#include <cstring>
 #include "fix_store.h"
+#include <cstring>
 #include "atom.h"
 #include "comm.h"
 #include "force.h"
@@ -106,6 +105,7 @@ vstore(NULL), astore(NULL), rbuf(NULL)
       for (int i = 0; i < nlocal; i++)
         for (int j = 0; j < nvalues; j++)
           astore[i][j] = 0.0;
+    maxexchange = nvalues;
   }
 }
 
@@ -280,6 +280,7 @@ int FixStore::pack_restart(int i, double *buf)
     return 1;
   }
 
+  // pack buf[0] this way because other fixes unpack it
   buf[0] = nvalues+1;
   if (vecflag) buf[1] = vstore[i];
   else
@@ -299,6 +300,7 @@ void FixStore::unpack_restart(int nlocal, int nth)
   double **extra = atom->extra;
 
   // skip to Nth set of extra values
+  // unpack the Nth first values this way because other fixes pack them
 
   int m = 0;
   for (int i = 0; i < nth; i++) m += static_cast<int> (extra[nlocal][m]);

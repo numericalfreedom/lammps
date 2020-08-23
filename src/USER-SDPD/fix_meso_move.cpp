@@ -16,11 +16,10 @@
       Morteza Jalalvand (IASBS)  jalalvand.m AT gmail.com
 ------------------------------------------------------------------------- */
 
+#include "fix_meso_move.h"
 #include <cstring>
 #include <cmath>
-#include "fix_meso_move.h"
 #include "atom.h"
-#include "group.h"
 #include "update.h"
 #include "modify.h"
 #include "force.h"
@@ -47,7 +46,7 @@ FixMesoMove::FixMesoMove (LAMMPS *lmp, int narg, char **arg) :
   xvarstr(NULL), yvarstr(NULL), zvarstr(NULL),
   vxvarstr(NULL), vyvarstr(NULL), vzvarstr(NULL),
   xoriginal(NULL), displace(NULL), velocity(NULL) {
-  if ((atom->e_flag != 1) || (atom->rho_flag != 1))
+  if ((atom->esph_flag != 1) || (atom->rho_flag != 1))
     error->all(FLERR,
         "fix meso/move command requires atom_style with both energy and density");
 
@@ -394,8 +393,8 @@ void FixMesoMove::initial_integrate (int /*vflag*/) {
   double **vest = atom->vest;
   double *rho = atom->rho;
   double *drho = atom->drho;
-  double *e = atom->e;
-  double *de = atom->de;
+  double *esph = atom->esph;
+  double *desph = atom->desph;
   double **f = atom->f;
   double *rmass = atom->rmass;
   double *mass = atom->mass;
@@ -416,7 +415,7 @@ void FixMesoMove::initial_integrate (int /*vflag*/) {
         xold[1] = x[i][1];
         xold[2] = x[i][2];
 
-        e[i] += dtf * de[i]; // half-step update of particle internal energy
+        esph[i] += dtf * desph[i]; // half-step update of particle internal energy
         rho[i] += dtf * drho[i]; // ... and density
 
         if (vxflag) {
@@ -468,7 +467,7 @@ void FixMesoMove::initial_integrate (int /*vflag*/) {
         xold[1] = x[i][1];
         xold[2] = x[i][2];
 
-        e[i] += dtf * de[i]; // half-step update of particle internal energy
+        esph[i] += dtf * desph[i]; // half-step update of particle internal energy
         rho[i] += dtf * drho[i]; // ... and density
 
         if (axflag) {
@@ -536,7 +535,7 @@ void FixMesoMove::initial_integrate (int /*vflag*/) {
         xold[1] = x[i][1];
         xold[2] = x[i][2];
 
-        e[i] += dtf * de[i]; // half-step update of particle internal energy
+        esph[i] += dtf * desph[i]; // half-step update of particle internal energy
         rho[i] += dtf * drho[i]; // ... and density
 
         d[0] = xoriginal[i][0] - point[0];
@@ -758,8 +757,8 @@ void FixMesoMove::final_integrate () {
 
   double **v = atom->v;
   double **f = atom->f;
-  double *e = atom->e;
-  double *de = atom->de;
+  double *esph = atom->esph;
+  double *desph = atom->desph;
   double *rho = atom->rho;
   double *drho = atom->drho;
   double *rmass = atom->rmass;
@@ -774,7 +773,7 @@ void FixMesoMove::final_integrate () {
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
-      e[i] += dtf * de[i];
+      esph[i] += dtf * desph[i];
       rho[i] += dtf * drho[i];
 
       if (xflag) {
@@ -949,6 +948,7 @@ int FixMesoMove::unpack_exchange (int nlocal, double *buf) {
 ------------------------------------------------------------------------- */
 
 int FixMesoMove::pack_restart (int i, double *buf) {
+  // pack buf[0] this way because other fixes unpack it
   buf[0] = 4;
   buf[1] = xoriginal[i][0];
   buf[2] = xoriginal[i][1];
@@ -964,6 +964,7 @@ void FixMesoMove::unpack_restart (int nlocal, int nth) {
   double **extra = atom->extra;
 
   // skip to Nth set of extra values
+  // unpack the Nth first values this way because other fixes pack them
 
   int m = 0;
   for (int i = 0; i < nth; i++) m += static_cast<int> (extra[nlocal][m]);
