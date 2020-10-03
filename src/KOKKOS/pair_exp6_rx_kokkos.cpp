@@ -17,7 +17,7 @@
 
 #include "pair_exp6_rx_kokkos.h"
 #include <cmath>
-#include <cstdlib>
+
 #include <cstring>
 #include "atom.h"
 #include "comm.h"
@@ -32,7 +32,7 @@
 #include "neigh_request.h"
 #include "atom_kokkos.h"
 #include "kokkos.h"
-#include "utils.h"
+
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -814,7 +814,7 @@ void PairExp6rxKokkos<DeviceType>::operator()(TagPairExp6rxComputeNoAtomics<NEIG
   }
 
   int tid = 0;
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef LMP_KOKKOS_GPU
   typedef Kokkos::Experimental::UniqueToken<
     DeviceType, Kokkos::Experimental::UniqueTokenScope::Global> unique_token_type;
   unique_token_type unique_token;
@@ -1156,7 +1156,7 @@ void PairExp6rxKokkos<DeviceType>::operator()(TagPairExp6rxComputeNoAtomics<NEIG
   t_uCG(tid,i) += uCG_i;
   t_uCGnew(tid,i) += uCGnew_i;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef LMP_KOKKOS_GPU
   unique_token.release(tid);
 #endif
 }
@@ -1189,7 +1189,7 @@ void PairExp6rxKokkos<DeviceType>::vectorized_operator(const int &ii, EV_FLOAT& 
   Kokkos::View<E_FLOAT*, typename DAT::t_efloat_1d::array_layout,typename KKDevice<DeviceType>::value,Kokkos::MemoryTraits<AtomicF<NEIGHFLAG>::value> > a_uCGnew = uCGnew;
 
   int tid = 0;
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef LMP_KOKKOS_GPU
   typedef Kokkos::Experimental::UniqueToken<
     DeviceType, Kokkos::Experimental::UniqueTokenScope::Global> unique_token_type;
   unique_token_type unique_token;
@@ -1624,7 +1624,7 @@ void PairExp6rxKokkos<DeviceType>::vectorized_operator(const int &ii, EV_FLOAT& 
     t_uCGnew(tid,i) += uCGnew_i;
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef LMP_KOKKOS_GPU
   unique_token.release(tid);
 #endif
 }
@@ -1715,16 +1715,16 @@ void PairExp6rxKokkos<DeviceType>::read_file(char *file)
   char **words = new char*[params_per_line+1];
 
   memoryKK->destroy_kokkos(k_params,params);
-  params = NULL;
+  params = nullptr;
   nparams = maxparam = 0;
 
   // open file on proc 0
 
   FILE *fp;
-  fp = NULL;
+  fp = nullptr;
   if (comm->me == 0) {
-    fp = force->open_potential(file);
-    if (fp == NULL) {
+    fp = utils::open_potential(file,lmp,nullptr);
+    if (fp == nullptr) {
       char str[128];
       snprintf(str,128,"Cannot open exp6/rx potential file %s",file);
       error->one(FLERR,str);
@@ -1741,7 +1741,7 @@ void PairExp6rxKokkos<DeviceType>::read_file(char *file)
   while (1) {
     if (comm->me == 0) {
       ptr = fgets(line,MAXLINE,fp);
-      if (ptr == NULL) {
+      if (ptr == nullptr) {
         eof = 1;
         fclose(fp);
       } else n = strlen(line) + 1;
@@ -1763,7 +1763,7 @@ void PairExp6rxKokkos<DeviceType>::read_file(char *file)
       n = strlen(line);
       if (comm->me == 0) {
         ptr = fgets(&line[n],MAXLINE-n,fp);
-        if (ptr == NULL) {
+        if (ptr == nullptr) {
           eof = 1;
           fclose(fp);
         } else n = strlen(line) + 1;
@@ -1783,7 +1783,7 @@ void PairExp6rxKokkos<DeviceType>::read_file(char *file)
 
     nwords = 0;
     words[nwords++] = strtok(line," \t\n\r\f");
-    while ((words[nwords++] = strtok(NULL," \t\n\r\f"))) continue;
+    while ((words[nwords++] = strtok(nullptr," \t\n\r\f"))) continue;
 
     for (ispecies = 0; ispecies < nspecies; ispecies++)
       if (strcmp(words[0],&atom->dname[ispecies][0]) == 0) break;
@@ -2129,7 +2129,7 @@ void partition_range( const int begin, const int end, int &thread_begin, int &th
 
 /* ---------------------------------------------------------------------- */
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef LMP_KOKKOS_GPU
 template<class DeviceType>
   template<class ArrayT>
 void PairExp6rxKokkos<DeviceType>::getMixingWeightsVect(const int np_total, int errorFlag,

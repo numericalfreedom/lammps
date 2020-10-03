@@ -428,7 +428,7 @@ void PairTableKokkos<DeviceType>::settings(int narg, char **arg)
   else if (strcmp(arg[0],"bitmap") == 0) tabstyle = BITMAP;
   else error->all(FLERR,"Unknown table style in pair_style command");
 
-  tablength = force->inumeric(FLERR,arg[1]);
+  tablength = utils::inumeric(FLERR,arg[1],false,lmp);
   if (tablength < 2) error->all(FLERR,"Illegal number of pair table entries");
 
   // optional keywords
@@ -462,7 +462,7 @@ void PairTableKokkos<DeviceType>::settings(int narg, char **arg)
   allocated = 0;
 
   ntables = 0;
-  tables = NULL;
+  tables = nullptr;
 }
 
 /* ----------------------------------------------------------------------
@@ -522,10 +522,10 @@ template<class DeviceType>
 void PairTableKokkos<DeviceType>::cleanup_copy() {
   // WHY needed: this prevents parent copy from deallocating any arrays
   allocated = 0;
-  cutsq = NULL;
-  eatom = NULL;
-  vatom = NULL;
-  h_table=NULL; d_table=NULL;
+  cutsq = nullptr;
+  eatom = nullptr;
+  vatom = nullptr;
+  h_table=nullptr; d_table=nullptr;
 }
 
 namespace LAMMPS_NS {

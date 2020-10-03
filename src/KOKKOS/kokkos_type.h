@@ -42,6 +42,10 @@ enum{FULL=1u,HALFTHREAD=2u,HALF=4u};
 #define MAX_TYPES_STACKPARAMS 12
 #define NeighClusterSize 8
 
+namespace Kokkos {
+  using NoInit = ViewAllocateWithoutInitializing;
+}
+
   struct lmp_float3 {
     float x,y,z;
     KOKKOS_INLINE_FUNCTION
@@ -211,6 +215,21 @@ struct ExecutionSpaceFromDevice<Kokkos::Experimental::HIP> {
 };
 #endif
 
+// set host pinned space
+#if defined(KOKKOS_ENABLE_CUDA)
+typedef Kokkos::CudaHostPinnedSpace LMPPinnedHostType;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPHostPinnedSpace LMPPinnedHostType;
+#endif
+
+// create simple LMPDeviceSpace typedef for non HIP or CUDA specific
+// behaviour
+#if defined(KOKKOS_ENABLE_CUDA)
+typedef Kokkos::Cuda LMPDeviceSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIP LMPDeviceSpace;
+#endif
+
 
 // Determine memory traits for force array
 // Do atomic trait when running HALFTHREAD neighbor list style
@@ -229,20 +248,20 @@ struct AtomicF<HALFTHREAD> {
 // Do atomic trait when running HALFTHREAD neighbor list style with CUDA
 template<int NEIGHFLAG, class DeviceType>
 struct AtomicDup {
-  enum {value = Kokkos::Experimental::ScatterNonAtomic};
+  using value = Kokkos::Experimental::ScatterNonAtomic;
 };
 
 #ifdef KOKKOS_ENABLE_CUDA
 template<>
 struct AtomicDup<HALFTHREAD,Kokkos::Cuda> {
-  enum {value = Kokkos::Experimental::ScatterAtomic};
+  using value = Kokkos::Experimental::ScatterAtomic;
 };
 #endif
 
-#if defined(KOKKOS_ENABLE_HIP)
+#ifdef KOKKOS_ENABLE_HIP
 template<>
 struct AtomicDup<HALFTHREAD,Kokkos::Experimental::HIP> {
-  enum {value = Kokkos::Experimental::ScatterAtomic};
+  using value = Kokkos::Experimental::ScatterAtomic;
 };
 #endif
 
@@ -251,14 +270,14 @@ struct AtomicDup<HALFTHREAD,Kokkos::Experimental::HIP> {
 #ifdef KOKKOS_ENABLE_OPENMP
 template<>
 struct AtomicDup<HALFTHREAD,Kokkos::OpenMP> {
-  enum {value = Kokkos::Experimental::ScatterAtomic};
+  using value = Kokkos::Experimental::ScatterAtomic;
 };
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
 template<>
 struct AtomicDup<HALFTHREAD,Kokkos::Threads> {
-  enum {value = Kokkos::Experimental::ScatterAtomic};
+  using value = Kokkos::Experimental::ScatterAtomic;
 };
 #endif
 
@@ -269,7 +288,7 @@ struct AtomicDup<HALFTHREAD,Kokkos::Threads> {
 // Use duplication when running threaded and not using atomics
 template<int NEIGHFLAG, class DeviceType>
 struct NeedDup {
-  enum {value = Kokkos::Experimental::ScatterNonDuplicated};
+  using value = Kokkos::Experimental::ScatterNonDuplicated;
 };
 
 #ifndef LMP_KOKKOS_USE_ATOMICS
@@ -277,20 +296,20 @@ struct NeedDup {
 #ifdef KOKKOS_ENABLE_OPENMP
 template<>
 struct NeedDup<HALFTHREAD,Kokkos::OpenMP> {
-  enum {value = Kokkos::Experimental::ScatterDuplicated};
+  using value = Kokkos::Experimental::ScatterDuplicated;
 };
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
 template<>
 struct NeedDup<HALFTHREAD,Kokkos::Threads> {
-  enum {value = Kokkos::Experimental::ScatterDuplicated};
+  using value = Kokkos::Experimental::ScatterDuplicated;
 };
 #endif
 
 #endif
 
-template<int value, typename T1, typename T2>
+template<typename value, typename T1, typename T2>
 class ScatterViewHelper {};
 
 template<typename T1, typename T2>

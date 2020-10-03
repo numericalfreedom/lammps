@@ -46,9 +46,9 @@ PairLJCutCoulDebyeKokkos<DeviceType>::PairLJCutCoulDebyeKokkos(LAMMPS *lmp):Pair
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
   datamask_read = X_MASK | F_MASK | TYPE_MASK | Q_MASK | ENERGY_MASK | VIRIAL_MASK;
   datamask_modify = F_MASK | ENERGY_MASK | VIRIAL_MASK;
-  cutsq = NULL;
-  cut_ljsq = NULL;
-  cut_coulsq = NULL;
+  cutsq = nullptr;
+  cut_ljsq = nullptr;
+  cut_coulsq = nullptr;
 
 }
 
@@ -70,11 +70,11 @@ template<class DeviceType>
 void PairLJCutCoulDebyeKokkos<DeviceType>::cleanup_copy() {
   // WHY needed: this prevents parent copy from deallocating any arrays
   allocated = 0;
-  cutsq = NULL;
-  cut_ljsq = NULL;
-  cut_coulsq = NULL;
-  eatom = NULL;
-  vatom = NULL;
+  cutsq = nullptr;
+  cut_ljsq = nullptr;
+  cut_coulsq = nullptr;
+  eatom = nullptr;
+  vatom = nullptr;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -277,10 +277,10 @@ void PairLJCutCoulDebyeKokkos<DeviceType>::settings(int narg, char **arg)
 {
   if (narg < 2 || narg > 3) error->all(FLERR,"Illegal pair_style command");
 
-  kappa = force->numeric(FLERR,arg[0]);
-  cut_lj_global = force->numeric(FLERR,arg[1]);
+  kappa = utils::numeric(FLERR,arg[0],false,lmp);
+  cut_lj_global = utils::numeric(FLERR,arg[1],false,lmp);
   if (narg == 2) cut_coul_global = cut_lj_global;
-  else cut_coul_global = force->numeric(FLERR,arg[2]);
+  else cut_coul_global = utils::numeric(FLERR,arg[2],false,lmp);
 
   // reset cutoffs that were previously set from data file
 
