@@ -63,12 +63,8 @@ PACKLIB = compress gpu kim kokkos latte message mpiio mscg poems \
 	  python voronoi \
 	  user-adios user-atc user-awpmd user-colvars user-h5md user-lb user-molfile \
 	  user-netcdf user-plumed user-qmmm user-quip user-scafacos \
-<<<<<<< HEAD
 	  user-smd user-vtk user-mesont \
           user-flex
-=======
-	  user-smd user-vtk
->>>>>>> 18c5a469c... files removed.
 
 PACKSYS = compress mpiio python user-lb
 
